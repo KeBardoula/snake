@@ -80,16 +80,13 @@ void render_game(SDL_Renderer *renderer, Snake *snake, Objective *objective, int
         return;
     }
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-
     // Dessiner le quadrillage
     for (int y = 0; y < WINDOW_HEIGHT / SEGMENT_SIZE; y++) {
         for (int x = 0; x < WINDOW_WIDTH / SEGMENT_SIZE; x++) {
             if ((x + y) % 2 == 0) {
-                SDL_SetRenderDrawColor(renderer, 85, 200, 94, 255); // Vert clair
+                SDL_SetRenderDrawColor(renderer, 34, 139, 34, 255); // Vert foncé
             } else {
-                SDL_SetRenderDrawColor(renderer, 55, 179, 54, 255); // Vert foncé
+                SDL_SetRenderDrawColor(renderer, 64, 189, 64, 255); // Vert plus clair
             }
             SDL_Rect rect = { x * SEGMENT_SIZE, y * SEGMENT_SIZE, SEGMENT_SIZE, SEGMENT_SIZE };
             SDL_RenderFillRect(renderer, &rect);
@@ -97,7 +94,7 @@ void render_game(SDL_Renderer *renderer, Snake *snake, Objective *objective, int
     }
 
     // Dessiner la bordure
-    SDL_SetRenderDrawColor(renderer, 75, 189, 84, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect top_border = {0, 0, WINDOW_WIDTH, BORDER_SIZE};
     SDL_Rect bottom_border = {0, WINDOW_HEIGHT - BORDER_SIZE, WINDOW_WIDTH, BORDER_SIZE};
     SDL_Rect left_border = {0, 0, BORDER_SIZE, WINDOW_HEIGHT};
@@ -167,8 +164,8 @@ void render_game(SDL_Renderer *renderer, Snake *snake, Objective *objective, int
     SDL_Rect objective_rect = { objective->x * SEGMENT_SIZE, objective->y * SEGMENT_SIZE, SEGMENT_SIZE, SEGMENT_SIZE };
     SDL_RenderCopy(renderer, textures[0], NULL, &objective_rect); // Utiliser la texture de l'objectif
 
-    // Afficher le score
-    TTF_Font *font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 24);
+    // Afficher le score avec une taille de police plus petite
+    TTF_Font *font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 16); // Taille de police réduite
     if (!font) {
         printf("Erreur TTF_OpenFont: %s\n", TTF_GetError());
         return;
