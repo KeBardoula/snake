@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 320
+#define WINDOW_HEIGHT 320
 #define SEGMENT_SIZE 10
 #define BORDER_SIZE 10
 
