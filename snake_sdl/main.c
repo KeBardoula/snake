@@ -22,11 +22,17 @@ int check_self_collision(Snake *snake) {
     return 0; // Pas de collision
 }
 
-int show_game_over_dialog(SDL_Renderer *renderer) {
-    const int dialog_width = 200;
-    const int dialog_height = 100;
-    const int button_width = 60;
-    const int button_height = 25;
+int show_game_over_dialog(SDL_Window *window, SDL_Renderer *renderer) {
+    renderer = SDL_GetRenderer(window);
+    if (!renderer) {
+        printf("Erreur SDL_GetRenderer: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    const int dialog_width = 300;
+    const int dialog_height = 200;
+    const int button_width = 100;
+    const int button_height = 30;
 
     SDL_Rect dialog_rect = { (WINDOW_WIDTH - dialog_width) / 2, (WINDOW_HEIGHT - dialog_height) / 2, dialog_width, dialog_height };
     SDL_Rect retry_button_rect = { dialog_rect.x + 10, dialog_rect.y + dialog_height - button_height - 10, button_width, button_height };
@@ -37,6 +43,20 @@ int show_game_over_dialog(SDL_Renderer *renderer) {
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // Bordure blanche
     SDL_RenderDrawRect(renderer, &dialog_rect);
+
+    // Charger l'image game_over.png
+    SDL_Surface *game_over_surface = IMG_Load("img/game_over.png");
+    if (!game_over_surface) {
+        printf("Erreur IMG_Load: %s\n", IMG_GetError());
+        return 1;
+    }
+    SDL_Texture *game_over_texture = SDL_CreateTextureFromSurface(renderer, game_over_surface);
+    SDL_FreeSurface(game_over_surface);
+
+    // Centrer l'image game_over.png
+    int game_over_width, game_over_height;
+    SDL_QueryTexture(game_over_texture, NULL, NULL, &game_over_width, &game_over_height);
+    SDL_Rect game_over_rect = { dialog_rect.x + (dialog_width - game_over_width) / 2, dialog_rect.y + 10, game_over_width, game_over_height };
 
     TTF_Font *font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 16);
     if (!font) {
@@ -54,9 +74,11 @@ int show_game_over_dialog(SDL_Renderer *renderer) {
     SDL_FreeSurface(retry_surface);
     SDL_FreeSurface(quit_surface);
 
+    SDL_RenderCopy(renderer, game_over_texture, NULL, &game_over_rect);
     SDL_RenderCopy(renderer, retry_texture, NULL, &retry_button_rect);
     SDL_RenderCopy(renderer, quit_texture, NULL, &quit_button_rect);
 
+    SDL_DestroyTexture(game_over_texture);
     SDL_DestroyTexture(retry_texture);
     SDL_DestroyTexture(quit_texture);
     TTF_CloseFont(font);
@@ -136,7 +158,7 @@ int main() {
     init_snake(&snake);
     generate_objective(&objective, &snake);
 
-    // Calcul de la longueur maximale du serpent
+    // Calculer la taille maximale du serpent
     int max_snake_length = (WINDOW_WIDTH / SEGMENT_SIZE) * (WINDOW_HEIGHT / SEGMENT_SIZE);
 
     while (running) {
@@ -169,18 +191,18 @@ int main() {
             generate_objective(&objective, &snake);
         }
 
-        // vérification de la condition de victoire
+        // Vérification de la condition de victoire
         if (snake.length == max_snake_length) {
-            printf("Victoire! Le serpent a atteint la longueur maximale.\n");
+            printf("Le serpent a atteint la taille maximale. Vous avez gagné !\n");
             running = 0;
-            show_game_over_dialog(renderer);
+            show_game_over_dialog(window, renderer);
         }
 
         render_game(renderer, &snake, &objective, score, textures, dx, dy);
-        SDL_Delay(150);
+        SDL_Delay(100);
 
         if (!running) {
-            int result = show_game_over_dialog(renderer);
+            int result = show_game_over_dialog(window, renderer);
             if (result == 0) {
                 // Recommencer le jeu
                 free_snake(&snake);
