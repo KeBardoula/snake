@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include "snake.h"
+#include "game_mode.h"
+#include "main.h"
 #include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>  // Ajout de l'inclusion de SDL_image.h
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL.h>
 
 #define WINDOW_WIDTH 320
 #define WINDOW_HEIGHT 320
@@ -22,13 +25,7 @@ int check_self_collision(Snake *snake) {
     return 0; // Pas de collision
 }
 
-int show_game_over_dialog(SDL_Window *window, SDL_Renderer *renderer) {
-    renderer = SDL_GetRenderer(window);
-    if (!renderer) {
-        printf("Erreur SDL_GetRenderer: %s\n", SDL_GetError());
-        return 1;
-    }
-
+int show_game_over_dialog(SDL_Window *window, SDL_Renderer *renderer, const char *message) {
     const int dialog_width = 300;
     const int dialog_height = 200;
     const int button_width = 100;
@@ -65,20 +62,26 @@ int show_game_over_dialog(SDL_Window *window, SDL_Renderer *renderer) {
     }
 
     SDL_Color white = { 255, 255, 255, 255 };
+    SDL_Surface *message_surface = TTF_RenderText_Solid(font, message, white);
     SDL_Surface *retry_surface = TTF_RenderText_Solid(font, "Recommencer", white);
     SDL_Surface *quit_surface = TTF_RenderText_Solid(font, "Quitter", white);
 
+    SDL_Texture *message_texture = SDL_CreateTextureFromSurface(renderer, message_surface);
     SDL_Texture *retry_texture = SDL_CreateTextureFromSurface(renderer, retry_surface);
     SDL_Texture *quit_texture = SDL_CreateTextureFromSurface(renderer, quit_surface);
 
+    SDL_FreeSurface(message_surface);
     SDL_FreeSurface(retry_surface);
     SDL_FreeSurface(quit_surface);
 
+    SDL_Rect message_rect = { dialog_rect.x + 10, dialog_rect.y + game_over_height + 20, dialog_width - 20, 30 };
     SDL_RenderCopy(renderer, game_over_texture, NULL, &game_over_rect);
+    SDL_RenderCopy(renderer, message_texture, NULL, &message_rect);
     SDL_RenderCopy(renderer, retry_texture, NULL, &retry_button_rect);
     SDL_RenderCopy(renderer, quit_texture, NULL, &quit_button_rect);
 
     SDL_DestroyTexture(game_over_texture);
+    SDL_DestroyTexture(message_texture);
     SDL_DestroyTexture(retry_texture);
     SDL_DestroyTexture(quit_texture);
     TTF_CloseFont(font);
@@ -104,13 +107,126 @@ int show_game_over_dialog(SDL_Window *window, SDL_Renderer *renderer) {
     return 1;
 }
 
+void show_main_menu(SDL_Renderer *renderer) {
+    const int button_width = 200;
+    const int button_height = 50;
+
+    SDL_Rect play_button_rect = { (WINDOW_WIDTH - button_width) / 2, (WINDOW_HEIGHT - button_height) / 2, button_width, button_height };
+
+    TTF_Font *font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 24);
+    if (!font) {
+        printf("Erreur TTF_OpenFont: %s\n", TTF_GetError());
+        return;
+    }
+
+    SDL_Color white = { 255, 255, 255, 255 };
+    SDL_Surface *play_surface = TTF_RenderText_Solid(font, "Jouer", white);
+    SDL_Texture *play_texture = SDL_CreateTextureFromSurface(renderer, play_surface);
+
+    SDL_FreeSurface(play_surface);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    SDL_RenderCopy(renderer, play_texture, NULL, &play_button_rect);
+
+    SDL_DestroyTexture(play_texture);
+    TTF_CloseFont(font);
+
+    SDL_RenderPresent(renderer);
+
+    SDL_Event e;
+    int running = 1;
+    while (running) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                running = 0;
+                exit(0);
+            } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+                int x = e.button.x;
+                int y = e.button.y;
+                if (x >= play_button_rect.x && x <= play_button_rect.x + play_button_rect.w &&
+                    y >= play_button_rect.y && y <= play_button_rect.y + play_button_rect.h) {
+                    running = 0;
+                }
+            }
+        }
+    }
+}
+
+void show_game_mode_menu(SDL_Renderer *renderer, SDL_Texture **textures) {
+    const int button_width = 200;
+    const int button_height = 50;
+
+    SDL_Rect classic_button_rect = { (WINDOW_WIDTH - button_width) / 2, (WINDOW_HEIGHT - button_height) / 2 - 60, button_width, button_height };
+    SDL_Rect time_attack_button_rect = { (WINDOW_WIDTH - button_width) / 2, (WINDOW_HEIGHT - button_height) / 2, button_width, button_height };
+    SDL_Rect endless_button_rect = { (WINDOW_WIDTH - button_width) / 2, (WINDOW_HEIGHT - button_height) / 2 + 60, button_width, button_height };
+
+    TTF_Font *font = TTF_OpenFont("/System/Library/Fonts/Helvetica.ttc", 24);
+    if (!font) {
+        printf("Erreur TTF_OpenFont: %s\n", TTF_GetError());
+        return;
+    }
+
+    SDL_Color white = { 255, 255, 255, 255 };
+    SDL_Surface *classic_surface = TTF_RenderText_Solid(font, "Classique", white);
+    SDL_Surface *time_attack_surface = TTF_RenderText_Solid(font, "Time Attack", white);
+    SDL_Surface *endless_surface = TTF_RenderText_Solid(font, "Endless", white);
+
+    SDL_Texture *classic_texture = SDL_CreateTextureFromSurface(renderer, classic_surface);
+    SDL_Texture *time_attack_texture = SDL_CreateTextureFromSurface(renderer, time_attack_surface);
+    SDL_Texture *endless_texture = SDL_CreateTextureFromSurface(renderer, endless_surface);
+
+    SDL_FreeSurface(classic_surface);
+    SDL_FreeSurface(time_attack_surface);
+    SDL_FreeSurface(endless_surface);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    SDL_RenderCopy(renderer, classic_texture, NULL, &classic_button_rect);
+    SDL_RenderCopy(renderer, time_attack_texture, NULL, &time_attack_button_rect);
+    SDL_RenderCopy(renderer, endless_texture, NULL, &endless_button_rect);
+
+    SDL_DestroyTexture(classic_texture);
+    SDL_DestroyTexture(time_attack_texture);
+    SDL_DestroyTexture(endless_texture);
+    TTF_CloseFont(font);
+
+    SDL_RenderPresent(renderer);
+
+    SDL_Event e;
+    int running = 1;
+    while (running) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                running = 0;
+                exit(0);
+            } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+                int x = e.button.x;
+                int y = e.button.y;
+                if (x >= classic_button_rect.x && x <= classic_button_rect.x + classic_button_rect.w &&
+                    y >= classic_button_rect.y && y <= classic_button_rect.y + classic_button_rect.h) {
+                    classic_mode(renderer, textures);
+                    running = 0;
+                } else if (x >= time_attack_button_rect.x && x <= time_attack_button_rect.x + time_attack_button_rect.w &&
+                           y >= time_attack_button_rect.y && y <= time_attack_button_rect.y + time_attack_button_rect.h) {
+                    time_attack_mode(renderer, textures);
+                    running = 0;
+                } else if (x >= endless_button_rect.x && x <= endless_button_rect.x + endless_button_rect.w &&
+                           y >= endless_button_rect.y && y <= endless_button_rect.y + endless_button_rect.h) {
+                    endless_mode(renderer, textures);
+                    running = 0;
+                }
+            }
+        }
+    }
+}
+
 int main() {
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     SDL_Texture *textures[15];
-    Snake snake;
-    Objective objective;
-    int running = 1, dx = 0, dy = 0, next_dx = 0, next_dy = 0, score = 0;
 
     srand(time(NULL));
 
@@ -154,73 +270,13 @@ int main() {
     printf("Chargement des textures...\n");
     init_sdl(&window, &renderer, textures);
 
-    printf("Initialisation du serpent...\n");
-    init_snake(&snake);
-    generate_objective(&objective, &snake);
+    // Afficher le menu principal
+    show_main_menu(renderer);
 
-    // Calculer la taille maximale du serpent
-    int max_snake_length = (WINDOW_WIDTH / SEGMENT_SIZE) * (WINDOW_HEIGHT / SEGMENT_SIZE);
+    // Afficher le menu de sélection du mode de jeu
+    show_game_mode_menu(renderer, textures);
 
-    while (running) {
-        handle_events(&running, &next_dx, &next_dy, dx, dy);
-
-        // Mettre à jour la direction du serpent uniquement si le joueur a fait un mouvement
-        if (next_dx != 0 || next_dy != 0) {
-            dx = next_dx;
-            dy = next_dy;
-            move_snake(&snake, dx, dy);
-        }
-
-        // Vérification des bordures
-        if (snake.head->x < BORDER_SIZE / SEGMENT_SIZE || snake.head->x >= (WINDOW_WIDTH - BORDER_SIZE) / SEGMENT_SIZE ||
-            snake.head->y < BORDER_SIZE / SEGMENT_SIZE || snake.head->y >= (WINDOW_HEIGHT - BORDER_SIZE) / SEGMENT_SIZE) {
-            printf("Le serpent a touché la bordure. Fin du jeu.\n");
-            running = 0;
-        }
-
-        // Vérification des collisions avec soi-même
-        if (check_self_collision(&snake)) {
-            printf("Le serpent s'est touché lui-même. Fin du jeu.\n");
-            running = 0;
-        }
-
-        // Vérification si le serpent mange l'objectif
-        if (snake.head->x == objective.x && snake.head->y == objective.y) {
-            grow_snake(&snake);
-            score++;
-            generate_objective(&objective, &snake);
-        }
-
-        // Vérification de la condition de victoire
-        if (snake.length == max_snake_length) {
-            printf("Le serpent a atteint la taille maximale. Vous avez gagné !\n");
-            running = 0;
-            show_game_over_dialog(window, renderer);
-        }
-
-        render_game(renderer, &snake, &objective, score, textures, dx, dy);
-        SDL_Delay(100);
-
-        if (!running) {
-            int result = show_game_over_dialog(window, renderer);
-            if (result == 0) {
-                // Recommencer le jeu
-                free_snake(&snake);
-                init_snake(&snake);
-                generate_objective(&objective, &snake);
-                running = 1;
-                dx = 0;
-                dy = 0;
-                next_dx = 0;
-                next_dy = 0;
-                score = 0;
-            } else {
-                break;
-            }
-        }
-    }
-
-    free_snake(&snake);
+    // Libérer les ressources
     for (int i = 0; i < 15; i++) {
         SDL_DestroyTexture(textures[i]);
     }

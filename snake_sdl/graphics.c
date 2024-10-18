@@ -75,8 +75,8 @@ void init_sdl(SDL_Window **window, SDL_Renderer **renderer, SDL_Texture **textur
 }
 
 void render_game(SDL_Renderer *renderer, Snake *snake, Objective *objective, int score, SDL_Texture **textures, int dx, int dy) {
-    if (!renderer || !snake || !snake->head) {
-        printf("Erreur: renderer, snake ou snake->head est NULL\n");
+    if (!renderer || !snake || !snake->head || !objective || !textures) {
+        printf("Erreur: renderer, snake, snake->head, objective ou textures est NULL\n");
         return;
     }
 
@@ -86,7 +86,7 @@ void render_game(SDL_Renderer *renderer, Snake *snake, Objective *objective, int
             if ((x + y) % 2 == 0) {
                 SDL_SetRenderDrawColor(renderer, 34, 139, 34, 255); // Vert foncé
             } else {
-                SDL_SetRenderDrawColor(renderer, 64, 189, 64, 255); // Vert plus clair
+                SDL_SetRenderDrawColor(renderer, 64, 189, 50, 255); // Vert plus clair
             }
             SDL_Rect rect = { x * SEGMENT_SIZE, y * SEGMENT_SIZE, SEGMENT_SIZE, SEGMENT_SIZE };
             SDL_RenderFillRect(renderer, &rect);
