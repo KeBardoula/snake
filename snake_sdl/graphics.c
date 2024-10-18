@@ -89,7 +89,7 @@ void render_game(SDL_Renderer *renderer, Snake *snake, Objective *objective, int
             if ((x + y) % 2 == 0) {
                 SDL_SetRenderDrawColor(renderer, 85, 200, 94, 255); // Vert clair
             } else {
-                SDL_SetRenderDrawColor(renderer, 34, 139, 34, 255); // Vert foncé
+                SDL_SetRenderDrawColor(renderer, 55, 179, 54, 255); // Vert foncé
             }
             SDL_Rect rect = { x * SEGMENT_SIZE, y * SEGMENT_SIZE, SEGMENT_SIZE, SEGMENT_SIZE };
             SDL_RenderFillRect(renderer, &rect);
