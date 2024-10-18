@@ -136,6 +136,9 @@ int main() {
     init_snake(&snake);
     generate_objective(&objective, &snake);
 
+    // Calcul de la longueur maximale du serpent
+    int max_snake_length = (WINDOW_WIDTH / SEGMENT_SIZE) * (WINDOW_HEIGHT / SEGMENT_SIZE);
+
     while (running) {
         handle_events(&running, &next_dx, &next_dy, dx, dy);
 
@@ -164,6 +167,13 @@ int main() {
             grow_snake(&snake);
             score++;
             generate_objective(&objective, &snake);
+        }
+
+        // vérification de la condition de victoire
+        if (snake.length == max_snake_length) {
+            printf("Victoire! Le serpent a atteint la longueur maximale.\n");
+            running = 0;
+            show_game_over_dialog(renderer);
         }
 
         render_game(renderer, &snake, &objective, score, textures, dx, dy);
